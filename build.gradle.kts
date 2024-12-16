@@ -15,7 +15,14 @@ dependencies {
 }
 
 publishing {
-
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["kotlin"])
+            groupId = "com.mylosoftworks"
+            artifactId = "GBNFKotlin"
+            version = "1.0"
+        }
+    }
 }
 
 kotlin {
@@ -23,5 +30,14 @@ kotlin {
     js {
         browser()
         nodejs()
+    }
+
+    sourceSets {
+        val commonMain by getting
+        val commonTest by getting
+        val jvmMain by getting
+        val jvmTest by getting
+        val jsMain by getting
+        val jsTest by getting
     }
 }
