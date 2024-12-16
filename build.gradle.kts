@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform") version "2.0.20"
+    id("maven-publish")
 }
 
 group = "com.mylosoftworks"
@@ -10,6 +11,10 @@ repositories {
 }
 
 dependencies {
+
+}
+
+publishing {
 
 }
 
