@@ -21,7 +21,7 @@ class ParseResult(val strValue: String, val associatedEntry: CompilableParsable,
         return null
     }
 
-    fun findAllWhere(includeSelf: Boolean = false, deep: Boolean = true, predicate: (ParseResult) -> Boolean): List<ParseResult> {
+    fun findAll(includeSelf: Boolean = false, deep: Boolean = true, predicate: (ParseResult) -> Boolean): List<ParseResult> {
         val list = mutableListOf<ParseResult>()
 
         if (includeSelf && predicate(this)) list.add(this)
@@ -32,7 +32,7 @@ class ParseResult(val strValue: String, val associatedEntry: CompilableParsable,
         }
 
         descendants.forEach {
-            val results = it.findAllWhere(true, true, predicate)
+            val results = it.findAll(true, true, predicate)
             list.addAll(results)
         }
 
@@ -45,5 +45,11 @@ class ParseResult(val strValue: String, val associatedEntry: CompilableParsable,
             return false
         }
         return entry.identifier == name
+    }
+
+    fun getAsEntityIfPossible(): GBNFEntity? {
+        val entry = associatedEntry
+        if (entry is GBNFEntity) return entry
+        return null
     }
 }

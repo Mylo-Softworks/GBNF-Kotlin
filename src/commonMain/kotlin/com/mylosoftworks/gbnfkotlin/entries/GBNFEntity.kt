@@ -9,7 +9,7 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
 
     var identifier: String? = identifier
         get() {
-            if (field == null) field = host!!.generateUniqueName()
+            if (field == null) field = host?.generateUniqueName()
             return field
         }
         private set
