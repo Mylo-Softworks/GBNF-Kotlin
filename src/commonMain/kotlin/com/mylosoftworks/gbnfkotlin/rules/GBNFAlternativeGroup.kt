@@ -1,16 +1,24 @@
 package com.mylosoftworks.gbnfkotlin.rules
 
+import com.mylosoftworks.gbnfkotlin.parsing.GBNFParseError
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
+import com.mylosoftworks.gbnfkotlin.parsing.gbnfParseError
 
 class GBNFAlternativeGroup: GBNFGroup() {
     override fun compile(): String {
         return rules.joinToString(" | ", "(", ")") { it.compile() }
     }
 
-    override fun parse(string: String): Pair<ParseResult, String>? { // Alternative group only requires one
+    override fun parse(string: String): Pair<ParseResult, String> { // Alternative group only requires one
         // Very similar to regular group match, but instead of collecting all matches, we return at the first match.
         rules.forEach {
-            val possibleResultPair = it.parse(string) // If anything in this entity fails to parse, that means this entity failed to parse.
+            var possibleResultPair: Pair<ParseResult, String>? = null
+            try {
+                possibleResultPair = it.parse(string)
+            }
+            catch (e: GBNFParseError) {
+                // This entity failed to parse
+            }
 
             if (possibleResultPair != null) { // Match found!
                 val (match, remainder) = possibleResultPair
@@ -21,6 +29,8 @@ class GBNFAlternativeGroup: GBNFGroup() {
                 ) to remainder
             }
         }
-        return null
+
+        // Nothing matches
+        gbnfParseError("No match found:\n$string")
     }
 }

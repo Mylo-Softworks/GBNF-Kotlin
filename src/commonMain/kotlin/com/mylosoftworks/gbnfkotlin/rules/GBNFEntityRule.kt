@@ -8,7 +8,7 @@ class GBNFEntityRule(val entity: GBNFEntity): GBNFRule() {
         return entity.identifier!!
     }
 
-    override fun parse(string: String): Pair<ParseResult, String>? {
+    override fun parse(string: String): Pair<ParseResult, String> {
         return entity.parse(string)
     }
 }

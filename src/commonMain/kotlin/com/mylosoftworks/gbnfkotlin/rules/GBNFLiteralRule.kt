@@ -1,6 +1,7 @@
 package com.mylosoftworks.gbnfkotlin.rules
 
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
+import com.mylosoftworks.gbnfkotlin.parsing.gbnfParseError
 import com.mylosoftworks.gbnfkotlin.sanitizeGBNFString
 
 class GBNFLiteralRule(val literal: String): GBNFRule() {
@@ -8,8 +9,8 @@ class GBNFLiteralRule(val literal: String): GBNFRule() {
         return "\"${sanitizeGBNFString(literal)}\""
     }
 
-    override fun parse(string: String): Pair<ParseResult, String>? {
-        if (!string.startsWith(literal)) return null
+    override fun parse(string: String): Pair<ParseResult, String> {
+        if (!string.startsWith(literal)) gbnfParseError("String doesn't match literal \"$literal\":\n$string")
 
         return ParseResult(literal, this) to string.substring(literal.length)
     }

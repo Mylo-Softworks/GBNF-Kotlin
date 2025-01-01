@@ -20,7 +20,7 @@ fun testParsing() {
         klass()
     }
 
-    println(gbnf.parse("test secret")?.first?.find {
+    println(gbnf.parse("test secret").first.find {
         it.isNamedEntity("class") // Alternatively, just check if it.associatedEntry == klass from earlier
     }?.strValue) // output: secret
 }

@@ -18,11 +18,11 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
         return "$identifier ::= ${rules.joinToString(" ") { it.compile() }}\n"
     }
 
-    override fun parse(string: String): Pair<ParseResult, String>? {
+    override fun parse(string: String): Pair<ParseResult, String> {
         var stringRemainder = string
         val subMatches = mutableListOf<ParseResult>()
         rules.forEach {
-            val (result, remainder) = it.parse(stringRemainder) ?: return null // If anything in this entity fails to parse, that means this entity failed to parse.
+            val (result, remainder) = it.parse(stringRemainder) // If anything in this entity fails to parse, that means this entity failed to parse.
             stringRemainder = remainder // Since parsing moves forwards
 
             subMatches.add(result) // Add the results to the parsed classes list

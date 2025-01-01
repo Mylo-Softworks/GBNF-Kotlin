@@ -15,5 +15,5 @@ abstract class GBNFEntry : CompilableParsable {
     /**
      * Parse the string (forwards only), returns the PartialParseResult (for merging) and the string containing the remainder.
      */
-    abstract override fun parse(string: String): Pair<ParseResult, String>?
+    abstract override fun parse(string: String): Pair<ParseResult, String>
 }

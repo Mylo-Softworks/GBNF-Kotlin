@@ -1,6 +1,8 @@
 package com.mylosoftworks.gbnfkotlin.rules
 
+import com.mylosoftworks.gbnfkotlin.parsing.GBNFParseError
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
+import com.mylosoftworks.gbnfkotlin.parsing.gbnfParseError
 
 open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
     override fun compile(): String {
@@ -11,7 +13,7 @@ open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
         return if (max == min) "{$min}" else if (max == null) "{$min,}" else "{$min,$max}"
     }
 
-    override fun parse(string: String): Pair<ParseResult, String>? {
+    override fun parse(string: String): Pair<ParseResult, String> {
         // Try to match as many times as possible (as many as allowed), if unable to match enough times, return null.
 
         var hitCount = 0
@@ -19,14 +21,17 @@ open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
         var stringRemainder = string
         val subMatches = mutableListOf<ParseResult>()
         for(i in 0..(max ?: 999999)) { // One of the reasons this parser is not recommended
-            val (result, remainder) = super.parse(stringRemainder) ?: break // If anything in this entity fails to parse, that means this entity failed to parse.
-            stringRemainder = remainder // Since parsing moves forwards
+            try {
+                val (result, remainder) = super.parse(stringRemainder) // If anything in this entity fails to parse, that means this entity failed to parse.
+                stringRemainder = remainder // Since parsing moves forwards
 
-            subMatches.add(result) // Add the results to the parsed classes list
-            hitCount++
+                subMatches.add(result) // Add the results to the parsed classes list
+                hitCount++
+            }
+            catch (e: GBNFParseError) {}
         }
 
-        if (hitCount < min) return null // Not enough hits, match is not valid
+        if (hitCount < min) gbnfParseError("Not enough hits for match:\n$stringRemainder") // Not enough hits, match is not valid
 
         return ParseResult(
             subMatches.joinToString("") { it.strValue },
