@@ -1,4 +1,7 @@
-package com.mylosoftworks.com.mylosoftworks.gbnfkotlin.rules
+package com.mylosoftworks.gbnfkotlin.rules
+
+import com.mylosoftworks.gbnfkotlin.CompilableParsable
+import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
 
 /**
  * A rule is a single entry defining grammar, for example:
@@ -10,11 +13,12 @@ package com.mylosoftworks.com.mylosoftworks.gbnfkotlin.rules
  * In the example above, `"these"` is a rule, `"are"` is a rule, and `entities` is also a rule.
  * `"these"` and `"are"` are literals, while `entities` is an entity.
  */
-abstract class GBNFRule {
+abstract class GBNFRule : CompilableParsable {
     /**
      * Compile this rule
      *
      * Literals will be compiled as `"literal"` while entity references will be compiled as `entity`.
      */
-    abstract fun compile(): String
+    abstract override fun compile(): String
+    abstract override fun parse(string: String): Pair<ParseResult, String>?
 }

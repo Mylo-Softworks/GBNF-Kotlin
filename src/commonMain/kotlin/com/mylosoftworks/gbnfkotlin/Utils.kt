@@ -1,4 +1,4 @@
-package com.mylosoftworks.com.mylosoftworks.gbnfkotlin
+package com.mylosoftworks.gbnfkotlin
 
 /**
  * Sanitize a string for literal in GBNF

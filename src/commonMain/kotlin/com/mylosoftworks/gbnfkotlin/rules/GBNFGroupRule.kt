@@ -1,6 +1,7 @@
-package com.mylosoftworks.com.mylosoftworks.gbnfkotlin.rules
+package com.mylosoftworks.gbnfkotlin.rules
 
-import com.mylosoftworks.com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
+import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
+import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
 
 /**
  * A group rule is a rule which indicates that items within should be grouped together, but unnamed.
@@ -17,4 +18,5 @@ open class GBNFGroup: GBNFEntity(null, null) {
 
 class GBNFGroupRule(val group: GBNFGroup): GBNFRule() {
     override fun compile() = group.compile()
+    override fun parse(string: String): Pair<ParseResult, String>? = group.parse(string)
 }

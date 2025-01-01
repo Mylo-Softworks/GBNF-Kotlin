@@ -1,7 +1,8 @@
-package com.mylosoftworks.com.mylosoftworks.gbnfkotlin.entries
+package com.mylosoftworks.gbnfkotlin.entries
 
-import com.mylosoftworks.com.mylosoftworks.gbnfkotlin.GBNF
-import com.mylosoftworks.com.mylosoftworks.gbnfkotlin.rules.*
+import com.mylosoftworks.gbnfkotlin.GBNF
+import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
+import com.mylosoftworks.gbnfkotlin.rules.*
 
 open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
     val rules: ArrayList<GBNFRule> = arrayListOf()
@@ -15,6 +16,22 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
 
     override fun compile(): String {
         return "$identifier ::= ${rules.joinToString(" ") { it.compile() }}\n"
+    }
+
+    override fun parse(string: String): Pair<ParseResult, String>? {
+        var stringRemainder = string
+        val subMatches = mutableListOf<ParseResult>()
+        rules.forEach {
+            val (result, remainder) = it.parse(stringRemainder) ?: return null // If anything in this entity fails to parse, that means this entity failed to parse.
+            stringRemainder = remainder // Since parsing moves forwards
+
+            subMatches.add(result) // Add the results to the parsed classes list
+        }
+        return ParseResult(
+            subMatches.joinToString("") { it.strValue },
+            this,
+            subMatches
+        ) to stringRemainder
     }
 
     /**

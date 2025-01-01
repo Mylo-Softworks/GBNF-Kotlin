@@ -1,6 +1,6 @@
-package com.mylosoftworks.com.mylosoftworks.gbnfkotlin
+package com.mylosoftworks.gbnfkotlin
 
-import com.mylosoftworks.com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
+import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
 
 class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null because this is the host
     val entities: ArrayList<GBNFEntity> = arrayListOf()
