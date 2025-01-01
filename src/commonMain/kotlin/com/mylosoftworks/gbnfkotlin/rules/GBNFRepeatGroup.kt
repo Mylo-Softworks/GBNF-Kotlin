@@ -20,16 +20,16 @@ open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
 
         var stringRemainder = string
         val subMatches = mutableListOf<ParseResult>()
-        for(i in 0..(max ?: 999999)) { // One of the reasons this parser is not recommended
-            try {
+        try {
+            for(i in 0..(max ?: 999999)) { // One of the reasons this parser is not recommended
                 val (result, remainder) = super.parse(stringRemainder) // If anything in this entity fails to parse, that means this entity failed to parse.
                 stringRemainder = remainder // Since parsing moves forwards
 
                 subMatches.add(result) // Add the results to the parsed classes list
                 hitCount++
             }
-            catch (e: GBNFParseError) {}
         }
+        catch (e: GBNFParseError) {}
 
         if (hitCount < min) gbnfParseError("Not enough hits for match:\n$stringRemainder") // Not enough hits, match is not valid
 

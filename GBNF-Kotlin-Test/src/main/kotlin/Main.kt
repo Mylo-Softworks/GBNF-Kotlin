@@ -1,6 +1,7 @@
 package com.mylosoftworks
 
 import com.mylosoftworks.gbnfkotlin.GBNF
+import kotlin.time.measureTime
 
 // https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md
 
@@ -40,7 +41,7 @@ fun testParsing() {
     println(parsed.find {
         it.isNamedEntity("class") // Alternatively, just check if it.associatedEntry == klass from earlier
     }?.strValue) // output: secret
-    println(parsed.descendants[3].strValue) // output: alpha
+//    println(parsed.descendants[3].strValue) // output: alpha
 }
 
 fun example1() {
