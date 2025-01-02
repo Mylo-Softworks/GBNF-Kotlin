@@ -1,15 +1,14 @@
 package com.mylosoftworks.gbnfkotlin.rules
 
+import com.mylosoftworks.gbnfkotlin.parsing.GBNFParseError
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
-import com.mylosoftworks.gbnfkotlin.parsing.gbnfParseError
 
 class GBNFRangeRule(val rangeDef: String, val negate: Boolean = false): GBNFRule() {
     override fun compile(): String {
         return "[" + (if (negate) "^" else "") +
-                "${rangeDef.replace("\\^", "^").replace("^", "\\^")}]" // Prevent mistakes when the user already escapes
+                "${rangeDef.replace("\\^", "^").replace("^", "\\^")
+                    .replace("\n", "\\n")}]" // Prevent mistakes when the user already escapes
     }
-
-//    val regex by lazy { Regex(compile()) } // T/ODO: Test properly, currently, assuming GBNF's ranges are like regex ranges, it should work, however, I'm not sure if this is true yet.
 
     private val ranges: Array<CharRange> by lazy {
         // Example: [a-fABCDEF0-9\-] should allow all of [abcdefABCDEF0123456789-]
@@ -48,15 +47,15 @@ class GBNFRangeRule(val rangeDef: String, val negate: Boolean = false): GBNFRule
     }
 
     /**
-     * Using regex to parse the character here (not very efficient, but it does the job)
+     * Use a custom parser to parse the character ranges
      */
-    override fun parse(string: String): Pair<ParseResult, String> {
-        if (string.isEmpty()) gbnfParseError("String can't match range because it is empty.")
+    override fun parse(string: String): Result<Pair<ParseResult, String>> {
+        if (string.isEmpty()) return Result.failure(GBNFParseError("String can't match range because it is empty."))
 
         // Take first character
         val char = string[0]
-        if (validateCharacter(char)) return ParseResult(char.toString(), this) to string.substring(1)
+        if (validateCharacter(char)) return Result.success(ParseResult(char.toString(), this) to string.substring(1))
 
-        gbnfParseError("Char doesn't match range:\n$string")
+        return Result.failure(GBNFParseError("Char doesn't match range ($rangeDef):\n$string"))
     }
 }

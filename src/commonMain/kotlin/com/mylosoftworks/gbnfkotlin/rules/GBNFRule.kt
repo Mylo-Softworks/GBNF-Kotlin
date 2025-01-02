@@ -20,5 +20,5 @@ abstract class GBNFRule : CompilableParsable {
      * Literals will be compiled as `"literal"` while entity references will be compiled as `entity`.
      */
     abstract override fun compile(): String
-    abstract override fun parse(string: String): Pair<ParseResult, String>
+    abstract override fun parse(string: String): Result<Pair<ParseResult, String>>
 }

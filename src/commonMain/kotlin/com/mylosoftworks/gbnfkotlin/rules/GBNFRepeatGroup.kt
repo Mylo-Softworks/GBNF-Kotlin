@@ -2,7 +2,6 @@ package com.mylosoftworks.gbnfkotlin.rules
 
 import com.mylosoftworks.gbnfkotlin.parsing.GBNFParseError
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
-import com.mylosoftworks.gbnfkotlin.parsing.gbnfParseError
 
 open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
     override fun compile(): String {
@@ -13,31 +12,34 @@ open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
         return if (max == min) "{$min}" else if (max == null) "{$min,}" else "{$min,$max}"
     }
 
-    override fun parse(string: String): Pair<ParseResult, String> {
+    override fun parse(string: String): Result<Pair<ParseResult, String>> {
         // Try to match as many times as possible (as many as allowed), if unable to match enough times, return null.
 
         var hitCount = 0
 
         var stringRemainder = string
         val subMatches = mutableListOf<ParseResult>()
-        try {
-            for(i in 0..(max ?: 999999)) { // One of the reasons this parser is not recommended
-                val (result, remainder) = super.parse(stringRemainder) // If anything in this entity fails to parse, that means this entity failed to parse.
+        var forceBreak = false // Since break isn't possible from within getOrElse.
+
+        while (!forceBreak && (max == null || hitCount < max)) {
+            super.parse(stringRemainder).fold({
+                val (result, remainder) = it
                 stringRemainder = remainder // Since parsing moves forwards
 
                 subMatches.add(result) // Add the results to the parsed classes list
                 hitCount++
-            }
+            }, {
+                forceBreak = true // Prevents the loop from continuing at the next iteration
+            }) // If this entity failed to parse, there's no reason to continue.
         }
-        catch (e: GBNFParseError) {}
 
-        if (hitCount < min) gbnfParseError("Not enough hits for match:\n$stringRemainder") // Not enough hits, match is not valid
+        if (hitCount < min) return Result.failure(GBNFParseError("Not enough hits for match:\n$stringRemainder")) // Not enough hits, match is not valid
 
-        return ParseResult(
+        return Result.success(ParseResult(
             subMatches.joinToString("") { it.strValue },
             this,
             subMatches
-        ) to stringRemainder
+        ) to stringRemainder)
     }
 }
 

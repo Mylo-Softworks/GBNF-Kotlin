@@ -18,5 +18,5 @@ open class GBNFGroup: GBNFEntity(null, null) {
 
 class GBNFGroupRule(val group: GBNFGroup): GBNFRule() {
     override fun compile() = group.compile()
-    override fun parse(string: String): Pair<ParseResult, String> = group.parse(string)
+    override fun parse(string: String): Result<Pair<ParseResult, String>> = group.parse(string)
 }
