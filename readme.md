@@ -1,3 +1,5 @@
+[![](https://www.jitpack.io/v/Mylo-Softworks/GBNF-Kotlin.svg)](https://www.jitpack.io/#Mylo-Softworks/GBNF-Kotlin)
+
 # GBNF Kotlin
 A Kotlin DSL for writing GBNF LLM grammars.
 
