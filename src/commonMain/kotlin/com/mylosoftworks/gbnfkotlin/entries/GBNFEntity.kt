@@ -42,6 +42,11 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
         parent.rules.add(GBNFEntityRule(this@invoke))
     }
 
+    fun entity(entity: GBNFEntity) {
+        val parent = this
+        parent.rules.add(GBNFEntityRule(entity))
+    }
+
     // Groups
 
     fun group(init: GBNFGroup.() -> Unit) {

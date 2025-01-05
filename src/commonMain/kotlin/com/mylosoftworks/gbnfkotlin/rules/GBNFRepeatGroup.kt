@@ -33,11 +33,6 @@ open class GBNFRepeatGroup(val min: Int = 0, val max: Int? = min): GBNFGroup() {
             }) // If this entity failed to parse, there's no reason to continue.
         }
 
-//        if (debugName == "rulestack repeat") { // TODO: Remove debug print
-//            println(hitCount)
-//            println(subMatches[0])
-//        }
-
         if (hitCount < min) return Result.failure(GBNFParseError("Not enough hits for match:\n$stringRemainder")) // Not enough hits, match is not valid
 
         return Result.success(ParseResult(

@@ -8,35 +8,37 @@ import com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter
 fun main() {
 //    testParsing()
 
-//    println(GBNF {
-//        val whitespace = entity("whitespace") { oneOrMore { range(" \r\n\t") } } // whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
-//        val identifier = entity("identifier") { oneOrMore { range("a-zA-Z\\-") } } // identifier ::= [a-zA-Z\-]+ # An identifier for a rule definition
-//        val literalContent = entity("literalcontent") { anyCount { oneOf {
-//            literal("\\\\")
-//            literal("\\\"")
-//            range("\"", true)
-//        } } } // literalcontent ::= ("\\\\" | "\\\"" | [^\"])* # Continue on escaped quotes
-//        val rangeContent = entity("rangecontent") { anyCount { oneOf {
-//            literal("\\\\")
-//            literal("\\]")
-//            range("]", true)
-//        } } } // rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
-//        val integer = entity("integer") { oneOrMore { range("0-9") } } // integer ::= [0-9]+
-//
-//        literal("\"")
-//
-//        literal("\"")
-//    }.parseOrThrow("""
-//        ""
-//    """.trimIndent()).second)
-
-    println(GBNFInterpreter.GBNFGBNF.compile())
-
+    // ("\\\\" | "\\\"" | [^\"])*
     val result = GBNFInterpreter.GBNFGBNF.parseOrThrow("""
-        test ::= needle needle2
+        root ::= (whitespace? ruledef)* whitespace?
+
+        whitespace ::= [ \r\n\t]+
+        identifier ::= [a-zA-Z0-9\-]+
+        literalcontent ::= ("\\\\" | "\\\"" | [^"])*
+        rangecontent ::= ("\\\\" | "\\]" | [^\]])*
+        integer ::= [0-9]+
+
+        ruledef ::= identifier whitespace "::=" whitespace rulelist
+        rulelist ::= rulestack (whitespace "|" whitespace rulelist)?
+        rulestack ::= rule (whitespace rule)*
+
+        rule ::= (grouprules | contentrules) modifier?
+
+        contentrules ::= (rangerule | literalrule | identifierrule)
+        identifierrule ::= identifier
+        literalrule ::= "\"" literalcontent "\""
+        rangerule ::= "[" rangecontent "]"
+
+        modifier ::= (optional | oneormore | anycount | countfromto)
+        optional ::= "?"
+        oneormore ::= "+"
+        anycount ::= "*"
+        countfromto ::= "{" integer ("," integer?)? "}"
+
+        grouprules ::= "(" rulelist ")"
     """.trimIndent())
 
-//    println(result.second) // Print remaining
+    println("Remainder: " + result.second) // Print remaining (should be empty if it parsed correctly)
 //    println(result.first.filter())
 //    println(result.first.find { it.isNamedEntity("rulestack") })
 }

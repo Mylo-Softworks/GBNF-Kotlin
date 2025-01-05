@@ -6,7 +6,7 @@ object GBNFInterpreter {
     val GBNFGBNF = GBNF { // See gbnf_for_gbnf.txt
         // The basic definitions
         val whitespace = entity("whitespace") { oneOrMore { range(" \r\n\t") } } // whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
-        val identifier = entity("identifier") { oneOrMore { range("a-zA-Z\\-") } } // identifier ::= [a-zA-Z\-]+ # An identifier for a rule definition
+        val identifier = entity("identifier") { oneOrMore { range("a-zA-Z0-9\\-") } } // identifier ::= [a-zA-Z0-9\-]+ # An identifier for a rule definition
         val literalContent = entity("literalcontent") { anyCount { oneOf {
             literal("\\\\")
             literal("\\\"")
@@ -42,14 +42,13 @@ object GBNFInterpreter {
         } } // modifier ::= (optional | oneormore | anycount, countfromto)
 
         // rules
-        val rule = entity("rule") {} // Circular reference, so initialize later (after grouprules)
+        val ruleVal = entity("rule") {} // Circular reference, so initialize later (after grouprules)
 
         val ruleStack = entity("rulestack") {
-            rule()
+            ruleVal()
             anyCount {
-                debugName = "rulestack repeat"
                 whitespace()
-                rule()
+                ruleVal()
             }
         } // rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
         val ruleList = entity("rulelist") rulelist@{
@@ -91,12 +90,12 @@ object GBNFInterpreter {
             literal("]")
         } // rangerule ::= "[" rangecontent "]"
         val contentRules = entity("contentrules") { oneOf {
-            identifierRule()
-            literalRule()
             rangeRule()
+            literalRule()
+            identifierRule()
         } } // contentrules ::= (identifierrule | literalrule | rangerule)
 
-        rule.apply { // Initialize later
+        ruleVal.apply { // Initialize later
             oneOf {
                 groupRules()
                 contentRules()
