@@ -1,10 +1,11 @@
 # This GBNF represents GBNF itsself, and is written in DSL syntax for the interpreter.
 # See com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter.kt
 
-root ::= (whitespace? ruledef)* whitespace? # The rule definitions, like `root ::= "bla bla"`
+root ::= (whitespacen? ruledef)* whitespacen? # The rule definitions, like `root ::= "bla bla"`
 
 # The basic definitions
-whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
+whitespace ::= [ \r\t]+ # Characters considered whitespace, the amount doesn't matter
+whitespacen ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
 identifier ::= [a-zA-Z0-9\-]+ # An identifier for a rule definition
 literalcontent ::= ("\\\\" | "\\\"" | [^"])* # Continue on escaped quotes
 rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
@@ -12,7 +13,9 @@ integer ::= [0-9]+
 
 ruledef ::= identifier whitespace "::=" whitespace rulelist # A definition of a rule `name ::= rules`
 rulelist ::= rulestack (whitespace "|" whitespace rulelist)? # The part of rule definitions containing the rules
+rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulelist)? # Same as rulelist but with newlines allowed
 rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
+rulestacknl ::= rule (whitespacen rule)*
 
 rule ::= (grouprules | contentrules) modifier? # A single rule with an optional modifier
 
@@ -30,40 +33,4 @@ anycount ::= "*"
 countfromto ::= "{" integer ("," integer?)? "}"
 
 # Group rules
-grouprules ::= "(" rulelist ")"
-
-
-
-
-
-# Version without comments
-
-root ::= (whitespace? ruledef)* whitespace?
-
-whitespace ::= [ \r\n\t]+
-identifier ::= [a-zA-Z0-9\-]+
-literalcontent ::= ("\\\\" | "\\\"" | [^"])*
-rangecontent ::= ("\\\\" | "\\]" | [^\]])*
-integer ::= [0-9]+
-
-ruledef ::= identifier whitespace "::=" whitespace rulelist
-rulelist ::= rulestack (whitespace "|" whitespace rulelist)?
-rulestack ::= rule (whitespace rule)*
-
-rule ::= (grouprules | contentrules) modifier?
-
-contentrules ::= (rangerule | literalrule | identifierrule)
-identifierrule ::= identifier
-literalrule ::= "\"" literalcontent "\""
-rangerule ::= "[" rangecontent "]"
-
-modifier ::= (optional | oneormore | anycount | countfromto)
-optional ::= "?"
-oneormore ::= "+"
-anycount ::= "*"
-countfromto ::= "{" integer ("," integer?)? "}"
-
-grouprules ::= "(" rulelist ")"
-
-# Currently fails on
-literalcontent ::= ("\\\\" | "\\\"" | [^\"])*
+grouprules ::= "(" rulelistnl ")"

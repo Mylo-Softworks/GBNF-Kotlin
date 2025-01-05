@@ -8,39 +8,56 @@ import com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter
 fun main() {
 //    testParsing()
 
-    // ("\\\\" | "\\\"" | [^\"])*
-    val result = GBNFInterpreter.GBNFGBNF.parseOrThrow("""
-        root ::= (whitespace? ruledef)* whitespace?
+//    val test = GBNF {
+//        //[a-zA-Z0-9\-]+
+//
+//        oneOrMore { range("a-zA-Z0-9\\-") }
+//    }
+//
+//    val result = test.parseOrThrow("""
+//        ::=
+//    """.trimIndent())
+//
+//    println(result.first.strValue)
 
-        whitespace ::= [ \r\n\t]+
-        identifier ::= [a-zA-Z0-9\-]+
-        literalcontent ::= ("\\\\" | "\\\"" | [^"])*
-        rangecontent ::= ("\\\\" | "\\]" | [^\]])*
-        integer ::= [0-9]+
-
-        ruledef ::= identifier whitespace "::=" whitespace rulelist
-        rulelist ::= rulestack (whitespace "|" whitespace rulelist)?
-        rulestack ::= rule (whitespace rule)*
-
-        rule ::= (grouprules | contentrules) modifier?
-
-        contentrules ::= (rangerule | literalrule | identifierrule)
-        identifierrule ::= identifier
-        literalrule ::= "\"" literalcontent "\""
-        rangerule ::= "[" rangecontent "]"
-
-        modifier ::= (optional | oneormore | anycount | countfromto)
-        optional ::= "?"
-        oneormore ::= "+"
-        anycount ::= "*"
-        countfromto ::= "{" integer ("," integer?)? "}"
-
-        grouprules ::= "(" rulelist ")"
+    GBNFInterpreter.interpretGBNF("""
+        root ::= "test"
+        rule ::= "another"
+        rulewithnl ::= ("another" |
+                        "rule")
     """.trimIndent())
 
-    println("Remainder: " + result.second) // Print remaining (should be empty if it parsed correctly)
-//    println(result.first.filter())
-//    println(result.first.find { it.isNamedEntity("rulestack") })
+//    // ("\\\\" | "\\\"" | [^\"])*
+//    val result = GBNFInterpreter.interpretGBNF("""
+//        root ::= (whitespace? ruledef)* whitespace?
+//
+//        whitespace ::= [ \r\n\t]+
+//        identifier ::= [a-zA-Z0-9\-]+
+//        literalcontent ::= ("\\\\" | "\\\"" | [^"])*
+//        rangecontent ::= ("\\\\" | "\\]" | [^\]])*
+//        integer ::= [0-9]+
+//
+//        ruledef ::= identifier whitespace "::=" whitespace rulelist
+//        rulelist ::= rulestack (whitespace "|" whitespace rulelist)?
+//        rulestack ::= rule (whitespace rule)*
+//
+//        rule ::= (grouprules | contentrules) modifier?
+//
+//        contentrules ::= (rangerule | literalrule | identifierrule)
+//        identifierrule ::= identifier
+//        literalrule ::= "\"" literalcontent "\""
+//        rangerule ::= "[" rangecontent "]"
+//
+//        modifier ::= (optional | oneormore | anycount | countfromto)
+//        optional ::= "?"
+//        oneormore ::= "+"
+//        anycount ::= "*"
+//        countfromto ::= "{" integer ("," integer?)? "}"
+//
+//        grouprules ::= "(" rulelist ")"
+//    """.trimIndent()).getOrThrow()
+//
+//    println(result.compile())
 }
 
 fun testParsing() {

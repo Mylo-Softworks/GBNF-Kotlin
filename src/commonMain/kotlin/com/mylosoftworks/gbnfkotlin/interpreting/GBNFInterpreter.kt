@@ -5,7 +5,8 @@ import com.mylosoftworks.gbnfkotlin.GBNF
 object GBNFInterpreter {
     val GBNFGBNF = GBNF { // See gbnf_for_gbnf.txt
         // The basic definitions
-        val whitespace = entity("whitespace") { oneOrMore { range(" \r\n\t") } } // whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
+        val whitespace = entity("whitespace") { oneOrMore { range(" \r\t") } } // whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
+        val whitespaceN = entity("whitespacen") { oneOrMore { range(" \r\n\t") } } // whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
         val identifier = entity("identifier") { oneOrMore { range("a-zA-Z0-9\\-") } } // identifier ::= [a-zA-Z0-9\-]+ # An identifier for a rule definition
         val literalContent = entity("literalcontent") { anyCount { oneOf {
             literal("\\\\")
@@ -60,6 +61,25 @@ object GBNFInterpreter {
                 this@rulelist() // rulelist, recursive
             }
         } // rulelist ::= rulestack (whitespace "|" whitespace rulelist)? # The part of rule definitions containing the rules
+
+        val ruleStackNL = entity("rulestack") {
+            ruleVal()
+            anyCount {
+                whitespaceN()
+                ruleVal()
+            }
+        } // rulestacknl ::= rule (whitespacen rule)*
+        val ruleListNL = entity("rulelist") rulelist@{
+            ruleStackNL()
+            optional {
+                whitespaceN()
+                literal("|")
+                whitespaceN()
+                this@rulelist() // rulelist, recursive
+            }
+        } // rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulelist)? # Same as rulelist but with newlines allowed
+
+
         val ruleDef = entity("ruledef") {
             identifier()
             whitespace()
@@ -71,7 +91,7 @@ object GBNFInterpreter {
         // Group rules
         val groupRules = entity("grouprules") {
             literal("(")
-            ruleList()
+            ruleListNL()
             literal(")")
         } // grouprules ::= "(" rulelist ")"
 
@@ -107,13 +127,22 @@ object GBNFInterpreter {
 
         // Root
         anyCount {
-            optional { whitespace() }
+            optional { whitespaceN() }
             ruleDef()
         }
-        optional { whitespace() } // root ::= (whitespace? ruledef)* whitespace? # The rule definitions, like `root ::= "bla bla"`
+        optional { whitespaceN() } // root ::= (whitespace? ruledef)* whitespace? # The rule definitions, like `root ::= "bla bla"`
     }
 
-    fun interpretGBNF(gbnf: String): GBNF {
+    fun interpretGBNF(gbnf: String): Result<GBNF> {
+        val parsed = GBNFGBNF.parse(gbnf).getOrElse { return Result.failure(it) }.first.filter()[0] // Only named entities
+
+//        parsed.forEach {
+//            println("Children: ${it.descendants.size}, Identifier: ${it.getAsEntityIfPossible()?.identifier}, content: ${it.strValue}")
+//        }
+
+        val rules = parsed.findAll(includeSelf = false, deep = false) { it.isNamedEntity("ruledef") } // Find "ruledef ::= identifier whitespace "::=" whitespace rulelist"
+        println(rules.size)
+        println(rules.joinToString("\n") { "Rule: " + it.strValue })
 
         TODO()
     }

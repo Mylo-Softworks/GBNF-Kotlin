@@ -22,6 +22,9 @@ class GBNFRangeRule(val rangeDef: String, val negate: Boolean = false): GBNFRule
                     currentChars = ""
                     continue
                 }
+
+                currentChars += char
+                continue
             }
 
             if (currentChars.endsWith("-")) { // Next character is end of range

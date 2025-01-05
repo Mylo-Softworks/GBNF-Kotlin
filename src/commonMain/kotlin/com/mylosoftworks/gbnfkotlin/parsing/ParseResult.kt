@@ -77,4 +77,9 @@ data class ParseResult<T>(val strValue: String, val associatedEntry: T?, val des
         return if (predicate(this)) listOf(ParseResult(this.strValue, this.associatedEntry, mappedDescendants))
             else mappedDescendants
     }
+
+    fun forEach(func: (ParseResult<*>) -> Unit) {
+        func(this)
+        descendants.forEach { it.forEach(func) }
+    }
 }
