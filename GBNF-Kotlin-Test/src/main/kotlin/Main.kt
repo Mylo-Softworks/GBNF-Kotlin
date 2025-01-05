@@ -23,8 +23,7 @@ fun main() {
     GBNFInterpreter.interpretGBNF("""
         root ::= "test"
         rule ::= "another"
-        rulewithnl ::= ("another" |
-                        "rule")
+        rangerule ::= [a-zA-Z]
     """.trimIndent())
 
 //    // ("\\\\" | "\\\"" | [^\"])*

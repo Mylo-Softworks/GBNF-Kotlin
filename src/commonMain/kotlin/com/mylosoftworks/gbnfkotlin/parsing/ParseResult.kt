@@ -1,7 +1,6 @@
 package com.mylosoftworks.gbnfkotlin.parsing
 
 import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
-import com.mylosoftworks.gbnfkotlin.rules.GBNFEntityRule
 import com.mylosoftworks.gbnfkotlin.rules.GBNFGroup
 
 /**

@@ -1,6 +1,10 @@
 package com.mylosoftworks.gbnfkotlin.interpreting
 
 import com.mylosoftworks.gbnfkotlin.GBNF
+import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
+import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
+import com.mylosoftworks.gbnfkotlin.rules.GBNFEntityRule
+import com.mylosoftworks.gbnfkotlin.rules.GBNFRule
 
 object GBNFInterpreter {
     val GBNFGBNF = GBNF { // See gbnf_for_gbnf.txt
@@ -134,6 +138,7 @@ object GBNFInterpreter {
     }
 
     fun interpretGBNF(gbnf: String): Result<GBNF> {
+        // TODO: Strip comments (comments are content which starts with "#" and ends with a newline)
         val parsed = GBNFGBNF.parse(gbnf).getOrElse { return Result.failure(it) }.first.filter()[0] // Only named entities
 
 //        parsed.forEach {
@@ -141,9 +146,61 @@ object GBNFInterpreter {
 //        }
 
         val rules = parsed.findAll(includeSelf = false, deep = false) { it.isNamedEntity("ruledef") } // Find "ruledef ::= identifier whitespace "::=" whitespace rulelist"
-        println(rules.size)
-        println(rules.joinToString("\n") { "Rule: " + it.strValue })
+        println(rules.joinToString("\n") { "Rule: ${it.strValue}, name: ${it.descendants[0].strValue}" })
 
-        TODO()
+        var result: Result<GBNF>? = null
+
+        Result.success(GBNF {
+            val lookupTable = hashMapOf<String, GBNFEntity>()
+            rules.forEach {
+                val name = it.descendants[0].strValue // identifier
+                val contents = it.descendants[4] // rulelist
+                lookupTable[name] = entity(name) {
+                    interpretEntity(this, contents)
+                }
+            }
+
+            // Replace scaffolding with real entities (which are now always defined)
+            entities.forEach {
+                mapScaffold(it, lookupTable).getOrElse { result = Result.failure(it) }
+            }
+
+            result = Result.success(this)
+        })
+
+        return result!!
     }
+
+    fun interpretEntity(entityBase: GBNFEntity, contents: ParseResult<*>) {
+        entityBase.apply {
+            // TODO: Read contents to parse the rules, entities use ScaffoldingEntityRule (see below) which is able to put a placeholder for
+        }
+    }
+
+    fun GBNFEntity.scaffoldEntity(name: String) {
+        this.rules.add(ScaffoldingEntityRule(name))
+    }
+
+    class ScaffoldingEntityRule(val name: String): GBNFRule() {
+        override fun compile(): String = error("Scaffolding is a placeholder")
+        override fun parse(string: String): Result<Pair<ParseResult<*>, String>> = error("Scaffolding is a placeholder")
+    }
+
+    fun mapScaffold(entity: GBNFEntity, lookup: HashMap<String, GBNFEntity>, completed: MutableList<String> = mutableListOf()): Result<Unit> {
+        entity.rules.map {
+            if (it is GBNFEntityRule && it.entity.identifier !in completed) {
+                completed += it.entity.identifier!!
+                mapScaffold(it.entity, lookup, completed)
+            }
+            else if (it is ScaffoldingEntityRule) {
+                return@map lookup.getOrElse(it.name) { return Result.failure(UndefinedEntityException("Rule ${it.name} is not defined anywhere in this grammar.")) } // Fill in the scaffolding
+            }
+
+            return@map it
+        }
+
+        return Result.success(Unit)
+    }
+
+    class UndefinedEntityException(message: String) : RuntimeException(message)
 }
