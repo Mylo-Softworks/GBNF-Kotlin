@@ -9,7 +9,7 @@ class GBNFLiteralRule(val literal: String): GBNFRule() {
         return "\"${sanitizeGBNFString(literal)}\""
     }
 
-    override fun parse(string: String): Result<Pair<ParseResult, String>> {
+    override fun parse(string: String): Result<Pair<ParseResult<*>, String>> {
         if (!string.startsWith(literal)) return Result.failure(GBNFParseError("String doesn't match literal \"$literal\":\n$string"))
 
         return Result.success(ParseResult(literal, this) to string.substring(literal.length))

@@ -7,6 +7,8 @@ import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
  * A single line entry.
  */
 abstract class GBNFEntry : CompilableParsable {
+    var debugName = "" // Debug name for checking this entry
+
     /**
      * Compile this entity to a valid GBNF string.
      */
@@ -15,5 +17,5 @@ abstract class GBNFEntry : CompilableParsable {
     /**
      * Parse the string (forwards only), returns the PartialParseResult (for merging) and the string containing the remainder.
      */
-    abstract override fun parse(string: String): Result<Pair<ParseResult, String>>
+    abstract override fun parse(string: String): Result<Pair<ParseResult<*>, String>>
 }

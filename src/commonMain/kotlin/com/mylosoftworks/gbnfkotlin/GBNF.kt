@@ -1,7 +1,6 @@
 package com.mylosoftworks.gbnfkotlin
 
 import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
-import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
 
 class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null because this is the host
     val entities: ArrayList<GBNFEntity> = arrayListOf()
@@ -17,8 +16,9 @@ class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null b
 
     override fun compile(): String { // Compile all instead of only self
         val builder = StringBuilder()
+        val invalidate = rules.isEmpty() || entities.any { it.identifier == "root" }
         // Start with self since super needs to be called
-        builder.append(super.compile())
+        if (!invalidate) builder.append(super.compile())
         entities.reversed().forEach {
             builder.append(it.compile())
         }

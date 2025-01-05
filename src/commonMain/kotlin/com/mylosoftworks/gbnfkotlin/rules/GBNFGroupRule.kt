@@ -8,6 +8,7 @@ import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
  */
 open class GBNFGroup: GBNFEntity(null, null) {
     override fun compile(): String {
+        if (rules.count() == 1) return rules[0].compile()
         return rules.joinToString(" ", "(", ")") { it.compile() }
     }
 
@@ -18,5 +19,5 @@ open class GBNFGroup: GBNFEntity(null, null) {
 
 class GBNFGroupRule(val group: GBNFGroup): GBNFRule() {
     override fun compile() = group.compile()
-    override fun parse(string: String): Result<Pair<ParseResult, String>> = group.parse(string)
+    override fun parse(string: String): Result<Pair<ParseResult<*>, String>> = group.parse(string)
 }

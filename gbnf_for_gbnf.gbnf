@@ -1,0 +1,33 @@
+# This GBNF represents GBNF itsself, and is written in DSL syntax for the interpreter.
+# See com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter.kt
+
+root ::= (whitespace? ruledef)* whitespace? # The rule definitions, like `root ::= "bla bla"`
+
+# The basic definitions
+whitespace ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
+identifier ::= [a-zA-Z\-]+ # An identifier for a rule definition
+literalcontent ::= ("\\\\" | "\\\"" | [^\"])* # Continue on escaped quotes
+rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
+integer ::= [0-9]+
+
+ruledef ::= identifier whitespace "::=" whitespace rulelist # A definition of a rule `name ::= rules`
+rulelist ::= rulestack (whitespace "|" whitespace rulelist)? # The part of rule definitions containing the rules
+rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
+
+rule ::= (grouprules | contentrules) modifier? # A single rule with an optional modifier
+
+# Possible rules
+contentrules ::= (identifierrule | literalrule | rangerule)
+identifierrule ::= identifier # an identifier
+literalrule ::= "\"" literalcontent "\""
+rangerule ::= "[" rangecontent "]"
+
+# Modifier rules (should take priority to get parsed properly)
+modifier ::= (optional | oneormore | anycount, countfromto)
+optional ::= "?"
+oneormore ::= "+"
+anycount ::= "*"
+countfromto ::= "{" integer ("," integer?)? "}"
+
+# Group rules
+grouprules ::= "(" rulelist ")"

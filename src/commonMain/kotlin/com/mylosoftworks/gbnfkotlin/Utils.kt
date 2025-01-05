@@ -7,3 +7,9 @@ fun sanitizeGBNFString(input: String): String {
     return input.replace("\\", "\\\\").replace("\"", "\\\"")
         .replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
 }
+
+fun sanitizeGBNFRangeChars(input: String): String {
+    return input.replace("\\", "\\\\").replace("\"", "\\\"")
+        .replace("\\^", "^").replace("^", "\\^").replace("-", "\\-").replace("]", "\\]")
+        .replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
+}
