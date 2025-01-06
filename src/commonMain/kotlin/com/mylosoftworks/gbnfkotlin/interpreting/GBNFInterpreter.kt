@@ -4,7 +4,10 @@ import com.mylosoftworks.gbnfkotlin.GBNF
 import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
 import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
 import com.mylosoftworks.gbnfkotlin.rules.GBNFEntityRule
+import com.mylosoftworks.gbnfkotlin.rules.GBNFGroupRule
 import com.mylosoftworks.gbnfkotlin.rules.GBNFRule
+import com.mylosoftworks.gbnfkotlin.unSanitizeGBNFRangeChars
+import com.mylosoftworks.gbnfkotlin.unSanitizeGBNFString
 
 object GBNFInterpreter {
     val GBNFGBNF = GBNF { // See gbnf_for_gbnf.txt
@@ -23,22 +26,27 @@ object GBNFInterpreter {
             range("]", true)
         } } } // rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
         val integer = entity("integer") { oneOrMore { range("0-9") } } // integer ::= [0-9]+
+        val comment = entity("comment") {
+            literal("#")
+            anyCount {
+                range("\n", true)
+            }
+        } // comment ::= "#" [^\n]* # Comments can be used pretty much anywhere
 
         // Modifier rules (should take priority to get parsed properly)
         val optional = entity("optional") { literal("?") } // optional ::= "?"
         val oneOrMore = entity("oneormore") { literal("+") } // oneormore ::= "+"
         val anyCount = entity("anycount") { literal("*") } // anycount ::= "*"
+        val comma = entity("comma") { literal(",") } // comma ::= ","
         val countFromTo = entity("countfromto") {
             literal("{")
             integer()
             optional {
-                group {
-                    literal(",")
-                    optional { integer() }
-                }
+                comma()
+                optional { integer() }
             }
             literal("}")
-        } // countfromto ::= "{" integer ("," integer?)? "}"
+        } // countfromto ::= "{" integer (comma integer?)? "}"
         val modifier = entity("modifier") { oneOf {
             optional()
             oneOrMore()
@@ -58,13 +66,13 @@ object GBNFInterpreter {
         } // rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
         val ruleList = entity("rulelist") rulelist@{
             ruleStack()
-            optional {
+            anyCount {
                 whitespace()
                 literal("|")
                 whitespace()
-                this@rulelist() // rulelist, recursive
+                ruleStack()
             }
-        } // rulelist ::= rulestack (whitespace "|" whitespace rulelist)? # The part of rule definitions containing the rules
+        } // rulelist ::= rulestack (whitespace "|" whitespace rulestack)* # The part of rule definitions containing the rules
 
         val ruleStackNL = entity("rulestack") {
             ruleVal()
@@ -75,22 +83,24 @@ object GBNFInterpreter {
         } // rulestacknl ::= rule (whitespacen rule)*
         val ruleListNL = entity("rulelist") rulelist@{
             ruleStackNL()
-            optional {
+            anyCount {
                 whitespaceN()
                 literal("|")
                 whitespaceN()
-                this@rulelist() // rulelist, recursive
+                ruleStackNL()
             }
-        } // rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulelist)? # Same as rulelist but with newlines allowed
+        } // rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulestacknl)* # Same as rulelist but with newlines allowed
 
 
         val ruleDef = entity("ruledef") {
+            optional { comment() }
             identifier()
             whitespace()
             literal("::=")
             whitespace()
             ruleList()
-        } // ruledef ::= identifier whitespace "::=" whitespace rulelist # A definition of a rule `name ::= rules`
+            optional { comment() }
+        } // ruledef ::= comment? identifier whitespace "::=" whitespace rulelist comment? # A definition of a rule `name ::= rules`
 
         // Group rules
         val groupRules = entity("grouprules") {
@@ -131,30 +141,30 @@ object GBNFInterpreter {
 
         // Root
         anyCount {
-            optional { whitespaceN() }
+            anyCount {
+                oneOf {
+                    whitespaceN()
+                    comment()
+                }
+            }
             ruleDef()
         }
-        optional { whitespaceN() } // root ::= (whitespace? ruledef)* whitespace? # The rule definitions, like `root ::= "bla bla"`
+        optional { whitespaceN() } // root ::= (whitespacen? comment? whitespacen? ruledef)* whitespacen? # The rule definitions, like `root ::= "bla bla"`
     }
 
     fun interpretGBNF(gbnf: String): Result<GBNF> {
-        // TODO: Strip comments (comments are content which starts with "#" and ends with a newline)
         val parsed = GBNFGBNF.parse(gbnf).getOrElse { return Result.failure(it) }.first.filter()[0] // Only named entities
 
-//        parsed.forEach {
-//            println("Children: ${it.descendants.size}, Identifier: ${it.getAsEntityIfPossible()?.identifier}, content: ${it.strValue}")
-//        }
 
         val rules = parsed.findAll(includeSelf = false, deep = false) { it.isNamedEntity("ruledef") } // Find "ruledef ::= identifier whitespace "::=" whitespace rulelist"
-        println(rules.joinToString("\n") { "Rule: ${it.strValue}, name: ${it.descendants[0].strValue}" })
 
         var result: Result<GBNF>? = null
 
         Result.success(GBNF {
             val lookupTable = hashMapOf<String, GBNFEntity>()
             rules.forEach {
-                val name = it.descendants[0].strValue // identifier
-                val contents = it.descendants[4] // rulelist
+                val name = it.find(deep = false) { it.isNamedEntity("identifier") }!!.strValue
+                val contents = it.find(deep = false) { it.isNamedEntity("rulelist") }!!
                 lookupTable[name] = entity(name) {
                     interpretEntity(this, contents)
                 }
@@ -173,7 +183,121 @@ object GBNFInterpreter {
 
     fun interpretEntity(entityBase: GBNFEntity, contents: ParseResult<*>) {
         entityBase.apply {
-            // TODO: Read contents to parse the rules, entities use ScaffoldingEntityRule (see below) which is able to put a placeholder for
+            when (contents.getAsEntityIfPossible()?.identifier) {
+                "rulelist", "rulelistnl" -> { // rulelist ::= rulestack (whitespace "|" whitespace rulestack)*
+                    // If another rulelist is directly contained, that means this is a oneOf group
+                    val stacks = contents.findAll(deep = false) { it.isNamedEntity("rulestack") }
+                    if (stacks.count() == 1) { // Not a oneOf group (|)
+                        // Simply parse rulestack on this level
+                        interpretEntity(this, stacks[0])
+                    }
+                    else { // OneOf group
+                        oneOf {
+                            for (ent in stacks) {
+                                interpretEntity(this, ent)
+                            }
+                        }
+                    }
+                }
+                "rulestack", "rulestacknl" -> { // rulestack ::= rule (whitespace rule)*
+                    // Add every rule inside entityBase directly (as groups are already handled by grouprules)
+                    val rules = contents.findAll(deep = false) { it.isNamedEntity("rule") } // Get all rules
+                    for (rule in rules) {
+                        interpretEntity(this, rule) // Add rule directly, now can be parsed on next step as "rule"
+                    }
+                }
+                "rule" -> { // rule ::= (grouprules | contentrules) modifier?
+                    // If a modifier is found, wrap it around whichever rule is used, then send that rule down again
+                    val rule = contents.descendants[0]
+                    val modifierOpt = contents.find(deep = false) { it.isNamedEntity("modifier") }
+
+                    if (modifierOpt == null) { // No modifier, don't add modifier
+                        interpretEntity(this, rule) // parse grouprules | contentrules
+                    }
+                    else {
+                        val actualMod = modifierOpt.descendants[0]
+                        when (actualMod.getAsEntityIfPossible()!!.identifier) { // modifier ::= (optional | oneormore | anycount | countfromto)
+                            "optional" -> { // optional ::= "?"
+                                optional {
+                                    interpretEntity(this, rule)
+                                }
+                            }
+                            "oneormore" -> { // oneormore ::= "+"
+                                oneOrMore {
+                                    interpretEntity(this, rule)
+                                }
+                            }
+                            "anycount" -> { // anycount ::= "*"
+                                anyCount {
+                                    interpretEntity(this, rule)
+                                }
+                            }
+                            "countfromto" -> { // countfromto ::= "{" integer (comma integer?)? "}"
+                                /*
+                                    From https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md
+                                    {m} repeats the precedent symbol or sequence exactly m times
+                                    {m,} repeats the precedent symbol or sequence at least m times
+                                    {m,n} repeats the precedent symbol or sequence at between m and n times (included)
+                                    {0,n} repeats the precedent symbol or sequence at most n times (included)
+                                 */
+                                val givenNumbers = actualMod.findAll(deep = false) { it.isNamedEntity("integer") } // 1 or 2 entries
+                                val commaProvided = actualMod.find(deep = false) { it.isNamedEntity("comma") } != null // Has a comma
+
+                                val startNumber = givenNumbers[0].strValue.toInt()
+                                if (givenNumbers.size == 1) {
+                                    if (commaProvided) { // {5,}
+                                        repeat(startNumber, null) {
+                                            interpretEntity(this, rule)
+                                        }
+                                    }
+                                    else { // {5}
+                                        repeat(startNumber) {
+                                            interpretEntity(this, rule)
+                                        }
+                                    }
+                                }
+                                else { // 2 numbers given
+                                    val endNumber = givenNumbers[1].strValue.toInt()
+                                    repeat(startNumber, endNumber) {
+                                        interpretEntity(this, rule)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                "grouprules" -> { // grouprules ::= "(" rulelistnl ")"
+                    // Group these entries
+                    group {
+                        interpretEntity(this, contents.descendants[0])
+                    }
+                }
+
+                "contentrules" -> { // contentrules ::= (rangerule | literalrule | identifierrule)
+                    // Take whatever is in this and pass it down, we don't care which one it is
+                    interpretEntity(this, contents.descendants[0])
+                }
+                "rangerule" -> { // rangerule ::= "[" rangecontent "]"
+                    // Parse the range rule
+                    val content = contents.descendants[0].strValue
+                    if (content.startsWith("^")) { // Inverted
+                        range(unSanitizeGBNFRangeChars(content.substring(1)), true)
+                    }
+                    else {
+                        range(unSanitizeGBNFRangeChars(content))
+                    }
+                }
+                "literalrule" -> { // literalrule ::= "\"" literalcontent "\""
+                    // Parse the literal rule
+                    val content = contents.descendants[0].strValue
+                    literal(unSanitizeGBNFString(content))
+                }
+                "identifierrule" -> { // identifierrule ::= identifier
+                    // Insert a placeholder
+                    scaffoldEntity(contents.descendants[0].strValue)
+                }
+                else -> error("Unimplemented identifier: ${contents.getAsEntityIfPossible()?.identifier}")
+            }
         }
     }
 
@@ -186,18 +310,20 @@ object GBNFInterpreter {
         override fun parse(string: String): Result<Pair<ParseResult<*>, String>> = error("Scaffolding is a placeholder")
     }
 
-    fun mapScaffold(entity: GBNFEntity, lookup: HashMap<String, GBNFEntity>, completed: MutableList<String> = mutableListOf()): Result<Unit> {
-        entity.rules.map {
-            if (it is GBNFEntityRule && it.entity.identifier !in completed) {
-                completed += it.entity.identifier!!
-                mapScaffold(it.entity, lookup, completed)
+    fun mapScaffold(entity: GBNFEntity, lookup: HashMap<String, GBNFEntity>): Result<Unit> {
+        val newRules = entity.rules.map {
+            if (it is GBNFGroupRule) {
+                mapScaffold(it.group, lookup)
             }
             else if (it is ScaffoldingEntityRule) {
-                return@map lookup.getOrElse(it.name) { return Result.failure(UndefinedEntityException("Rule ${it.name} is not defined anywhere in this grammar.")) } // Fill in the scaffolding
+                return@map GBNFEntityRule(lookup.getOrElse(it.name) { return Result.failure(UndefinedEntityException("Rule ${it.name} is not defined anywhere in this grammar.")) }) // Fill in the scaffolding
             }
 
             return@map it
         }
+
+        entity.rules.clear()
+        newRules.forEach { entity.rules.add(it) }
 
         return Result.success(Unit)
     }

@@ -1,6 +1,7 @@
 package com.mylosoftworks.gbnfkotlin
 
 import com.mylosoftworks.gbnfkotlin.entries.GBNFEntity
+import com.mylosoftworks.gbnfkotlin.parsing.ParseResult
 
 class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null because this is the host
     val entities: ArrayList<GBNFEntity> = arrayListOf()
@@ -18,11 +19,17 @@ class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null b
         val builder = StringBuilder()
         val invalidate = rules.isEmpty() || entities.any { it.identifier == "root" }
         // Start with self since super needs to be called
-        if (!invalidate) builder.append(super.compile())
-        entities.reversed().forEach {
+        if (!invalidate) builder.append(super.compile(), 0)
+        entities.forEach {
             builder.append(it.compile())
         }
         return builder.toString()
+    }
+
+    override fun parse(string: String): Result<Pair<ParseResult<*>, String>> {
+        val otherRoot = entities.find { it.identifier == "root" }
+        val invalidate = rules.isEmpty() || otherRoot != null
+        return if (invalidate) otherRoot?.parse(string) ?: Result.failure(RuntimeException("No valid root rule exists.")) else super.parse(string)
     }
 
     fun entity(name: String? = null, init: GBNFEntity.() -> Unit): GBNFEntity {

@@ -1,9 +1,29 @@
 [![](https://www.jitpack.io/v/Mylo-Softworks/GBNF-Kotlin.svg)](https://www.jitpack.io/#Mylo-Softworks/GBNF-Kotlin)
 
 # GBNF Kotlin
-A Kotlin DSL for writing GBNF LLM grammars.
+A Kotlin multiplatform library for anything GBNF.
+
+Features:
+* DSL for writing GBNF grammars in kotlin
+* Interpreter for loading GBNF grammars to the format as if written in the DSL
+* Parsing of GBNF grammars
+  * Functions for converting parsed trees to a custom tree format.
+  * Functions for searching in and filtering trees
+
+## What is this library for?
+Originally, GBNF Kotlin was supposed to just be a DSL for writing GBNF grammars in kotlin, to be used with [KotLLMs].  
+Then, parsing was added, originally meant for defining a grammar for function calling in [KotLLMs], parsing was expanded with utility functions.  
+Since GBNF is effectively a superset of BNF, it can be used to describe languages, in fact, you can use GBNF to describe GBNF, as seen in [gbnf_for_gbnf.gbnf](gbnf_for_gbnf.gbnf).  
+Because of this, it is now possible to write a parser for GBNF inside of GBNF Kotlin, so I wrote one, and with it, I added support for parsing GBNF from text to the DSL object. So existing grammars are also valid and usable.
+
+You might be wondering, what can this library be used for? On the surface, the features could sound confusing, it's essentially a library for using GBNF, and a helper library for creating GBNF grammars programatically.  
+Usages:
+* Writing an LLM grammar, and reading the result back. (As seen in [KotLLMs])
+* Writing a parser for a computer language (not exclusively programming languages), for parsing from text to an [abstract syntax tree]. (As seen in the GBNFInterpreter)
 
 ## Usage
+
+### DSL
 Example: "I'm having a great day!"
 ```kotlin
 package example
@@ -131,3 +151,6 @@ anyCount {
 }
 // ("This is an entity.")*
 ```
+
+[KotLLMs]: https://github.com/Mylo-Softworks/KotLLMs
+[abstract syntax tree]: https://en.wikipedia.org/wiki/Abstract_syntax_tree

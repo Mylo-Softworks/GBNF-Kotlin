@@ -53,23 +53,23 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
         addAndInit(GBNFGroup(), init)
     }
 
-    fun oneOf(init: GBNFGroup.() -> Unit) {
+    fun oneOf(init: GBNFAlternativeGroup.() -> Unit) {
         addAndInit(GBNFAlternativeGroup(), init)
     }
 
-    fun repeat(min: Int = 0, max: Int? = min, init: GBNFGroup.() -> Unit) {
+    fun repeat(min: Int = 0, max: Int? = min, init: GBNFRepeatGroup.() -> Unit) {
         addAndInit(GBNFRepeatGroup(min, max), init)
     }
 
-    fun optional(init: GBNFGroup.() -> Unit) {
+    fun optional(init: GBNFOptionalGroup.() -> Unit) {
         addAndInit(GBNFOptionalGroup(), init)
     }
 
-    fun oneOrMore(init: GBNFGroup.() -> Unit) {
+    fun oneOrMore(init: GBNFOneOrMoreGroup.() -> Unit) {
         addAndInit(GBNFOneOrMoreGroup(), init)
     }
 
-    fun anyCount(init: GBNFGroup.() -> Unit) {
+    fun anyCount(init: GBNFAnyCountGroup.() -> Unit) {
         addAndInit(GBNFAnyCountGroup(), init)
     }
 
@@ -83,7 +83,7 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
         rules.add(GBNFRangeRule(rangeDef, negate))
     }
 
-    private fun addAndInit(group: GBNFGroup, init: GBNFGroup.() -> Unit) {
+    private fun <T : GBNFGroup> addAndInit(group: T, init: T.() -> Unit) {
         rules.add(group.apply(init).rule())
     }
 }
