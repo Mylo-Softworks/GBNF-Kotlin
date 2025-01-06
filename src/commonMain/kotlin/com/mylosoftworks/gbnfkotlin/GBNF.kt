@@ -19,7 +19,7 @@ class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null b
         val builder = StringBuilder()
         val invalidate = rules.isEmpty() || entities.any { it.identifier == "root" }
         // Start with self since super needs to be called
-        if (!invalidate) builder.append(super.compile(), 0)
+        if (!invalidate) builder.insert(0, super.compile())
         entities.forEach {
             builder.append(it.compile())
         }
