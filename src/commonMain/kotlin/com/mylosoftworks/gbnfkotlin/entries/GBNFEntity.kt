@@ -58,7 +58,13 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
     }
 
     fun repeat(min: Int = 0, max: Int? = min, init: GBNFRepeatGroup.() -> Unit) {
-        addAndInit(GBNFRepeatGroup(min, max), init)
+        // Character count optimization
+        when {
+            min == 0 && max == 1 -> optional(init)
+            min == 0 && max == null -> anyCount(init)
+            min == 1 && max == null -> oneOrMore(init)
+            else -> addAndInit(GBNFRepeatGroup(min, max), init)
+        }
     }
 
     fun optional(init: GBNFOptionalGroup.() -> Unit) {
@@ -86,4 +92,80 @@ open class GBNFEntity(identifier: String?, val host: GBNF?): GBNFEntry() {
     private fun <T : GBNFGroup> addAndInit(group: T, init: T.() -> Unit) {
         rules.add(group.apply(init).rule())
     }
+
+    // Operator function based utilities
+    /**
+     * Adds a literal from a string.
+     *
+     * Usage: `+"literal"` -> `"literal"`
+     */
+    operator fun String.unaryPlus() {
+        literal(this)
+    }
+
+    /**
+     * Adds a range from a string.
+     *
+     * Usage: `-"a-zA-Z"` -> `[a-zA-Z]`
+     */
+    operator fun String.unaryMinus() {
+        range(this)
+    }
+
+    /**
+     * Adds data so range can understand that it's inverted
+     */
+    operator fun String.not() = this to true
+    operator fun Pair<String, Boolean>.not() = first to !second
+
+    /**
+     * Adds a negated range from a string, bool pair.
+     *
+     * Usage: `-!"a-zA-Z"` -> `[^a-zA-Z]`
+     */
+    operator fun Pair<String, Boolean>.unaryMinus() {
+        range(first, second)
+    }
+
+    /**
+     * Repeat n times. When number is negative, repeat up to n times.
+     *
+     * Usage: `5 { +"literal" }` -> `"literal"{5}`
+     *
+     * Usage: `(-5) { +"literal" }` -> `"literal"{0,5}`
+     */
+    operator fun Int.invoke(block: GBNFRepeatGroup.() -> Unit) {
+        if (this < 0) {
+            repeat(0, -this, block)
+        }
+        else {
+            repeat(this, this, block)
+        }
+    }
+
+    /**
+     * Repeat from a to b times.
+     *
+     * Usage: `(2..5) { +"literal" }` -> `"literal"{2,5}`
+     *
+     * Usage: `(2..Infinity) { +"literal" }` -> `"literal"{2,}`
+     */
+    operator fun IntRange.invoke(block: GBNFRepeatGroup.() -> Unit) = repeat(first, last, block)
+    /**
+     * Repeat from a to b times.
+     *
+     * Usage: `(2..5) { +"literal" }` -> `"literal"{2,5}`
+     *
+     * Usage: `(2..Infinity) { +"literal" }` -> `"literal"{2,}`
+     */
+    operator fun Pair<Int, Int?>.invoke(block: GBNFRepeatGroup.() -> Unit) = repeat(first, second, block)
+
+    /**
+     * Make this number indicate that it's a range from the int to infinity.
+     *
+     * Usage: `(+1) { +"literal" }` -> `"literal"{1,}`
+     */
+    operator fun Int.rangeTo(inf: Inf) = Pair(this, null)
 }
+
+object Inf // Infinity used for pseudo-ranges.

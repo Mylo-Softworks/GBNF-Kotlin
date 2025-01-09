@@ -35,4 +35,16 @@ class GBNF(rules: GBNF.() -> Unit): GBNFEntity("root", null) { // Host is null b
     fun entity(name: String? = null, init: GBNFEntity.() -> Unit): GBNFEntity {
         return GBNFEntity(name, this).apply(init).apply {entities.add(this)}
     }
+
+    // Operator function based utilities
+    /**
+     * Adds a named entity from a string.
+     *
+     * Usage: `"name" {}`
+     *
+     * Alternative to `entity("name") {}`
+     */
+    operator fun String.invoke(block: GBNFEntity.() -> Unit): GBNFEntity {
+        return entity(this, block)
+    }
 }

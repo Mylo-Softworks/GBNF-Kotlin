@@ -62,6 +62,9 @@ Literal strings can be defined like this:
 ```kotlin
 literal("Content")
 // "Content"
+
+// Using operator
++"Content"
 ```
 
 Characters and rages can be defined like this:
@@ -70,9 +73,15 @@ Characters and rages can be defined like this:
 range("a-z")
 // [a-z]
 
+// Using operator
+-"a-z"
+
 // In order to allow everything except "y"
 range("y", true)
 // [^y]
+
+// Using operator
+-!"a-z"
 ```
 
 ### Non-terminal rules
@@ -89,13 +98,18 @@ entity()
 
 // root ::= entity
 // entity ::= "This is an entity."
+
+// Using operator
+val entity = "entity" {
+    +"This is an entity."
+}
 ```
 
 Groups are used to group rules together, they are like entities, but non-reusable
 ```kotlin
-group {
-    literal("This is an entity.")
-    literal("This is another entity.")
+group { 
+    literal("This is a literal.")
+    literal("This is another literal.")
 }
 
 // ("This is an entity." "This is another entity.")
@@ -104,52 +118,87 @@ group {
 Alternatives (one of) are used to provide multiple options that can be matched individually
 ```kotlin
 oneOf {
-    literal("This is an entity.")
-    literal("This is another entity.")
+    literal("This is a literal.")
+    literal("This is another literal.")
 }
 
-// ("This is an entity." | "This is another entity.")
+// ("This is a literal." | "This is another literal.")
 ```
 
 Repeat is used to mark a group as repeating a certain amount of times
 ```kotlin
 repeat(5) { // Repeat 5 times exactly
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity."){5,5}
+// "literal"{5}
+
+// Using operator
+5 {
+    +"literal"
+}
 
 repeat(max=5) { // Repeat between 0 and 5 times
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity."){0,5}
+// "literal"{0,5}
+
+// Using operator
+(-5) {
+    +"literal"
+}
 
 repeat(1, 5) { // Repeat between 1 and 5 times
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity."){1,5}
+// "literal"{1,5}
+
+// Using operator
+(1..5) {
+    +"literal"
+}
 
 repeat(5, null) { // Repeat at least 5 times
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity."){5,}
+// "literal"{5,}
+
+// Using operator
+(5..Inf) {
+    +"literal"
+}
 ```
 
 For some types of repeat, there are alternative functions.
 ```kotlin
 optional {
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity.")?
+// "literal"?
+
+// Using operator
+-1 {
+    +"literal"
+}
 
 oneOrMore {
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity.")+
+// "literal"+
+
+// Using operator
+(1..Inf) {
+    +"literal"
+}
 
 anyCount {
-    literal("This is an entity.")
+    literal("literal")
 }
-// ("This is an entity.")*
+// "literal"*
+
+// Using operator
+(0..Inf) {
+    +"literal"
+}
 ```
 
 [KotLLMs]: https://github.com/Mylo-Softworks/KotLLMs

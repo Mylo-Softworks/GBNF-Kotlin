@@ -1,13 +1,57 @@
 package com.mylosoftworks
 
 import com.mylosoftworks.gbnfkotlin.GBNF
-import com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter
+import com.mylosoftworks.gbnfkotlin.entries.Inf
 
 // https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md
 
 fun main() {
 //    testParsing()
 
+    testShortCuts()
+}
+
+fun testShortCuts() {
+    val gbnf = GBNF {
+        val testEntity = entity("entity") {
+            +"literal"
+        }
+        val anotherEntity = "another" {
+            +"literal"
+        }
+
+        +"literal"
+        testEntity()
+        anotherEntity()
+
+        // Range
+        -"a-z"
+
+        // Negated range
+        -!"a-z"
+
+        // Range, but negated and back
+        -!!"a-z"
+
+        // Repeat 5 times
+        5 {
+            +"literal"
+        }
+
+        // Repeat at least 2 times
+        (2..Inf) {
+            +"literal"
+        }
+
+        // Repeat at most 2 times
+        (-2) {
+            +"literal"
+        }
+    }
+    println(gbnf.compile())
+}
+
+fun testInterpreting() {
 //    val test = GBNF {
 //        //[a-zA-Z0-9\-]+
 //
@@ -20,48 +64,48 @@ fun main() {
 //
 //    println(result.first.strValue)
 
-    val interpreted = GBNFInterpreter.interpretGBNF("""
-        # This GBNF represents GBNF itsself, and is written in DSL syntax for the interpreter.
-        # See com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter.kt
-
-        root ::= ((whitespacen | comment)* whitespacen? ruledef)* whitespacen? # The rule definitions, like `root ::= "bla bla"`
-
-        # The basic definitions
-        whitespace ::= [ \r\t]+ # Characters considered whitespace, the amount doesn't matter
-        whitespacen ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
-        identifier ::= [a-zA-Z0-9\-]+ # An identifier for a rule definition
-        literalcontent ::= ("\\\\" | "\\\"" | [^"])* # Continue on escaped quotes
-        rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
-        integer ::= [0-9]+
-        comment ::= "#" [^\n]* # Comments can be used pretty much anywhere
-
-        ruledef ::= comment? identifier whitespace "::=" whitespace rulelist comment? # A definition of a rule `name ::= rules`
-        rulelist ::= rulestack (whitespace "|" whitespace rulestack)* # The part of rule definitions containing the rules
-        rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulestacknl)* # Same as rulelist but with newlines allowed
-        rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
-        rulestacknl ::= rule (whitespacen rule)*
-
-        rule ::= (grouprules | contentrules) modifier? # A single rule with an optional modifier
-
-        # Possible rules
-        contentrules ::= (rangerule | literalrule | identifierrule)
-        identifierrule ::= identifier # an identifier
-        literalrule ::= "\"" literalcontent "\""
-        rangerule ::= "[" rangecontent "]"
-
-        # Modifier rules (should take priority to get parsed properly)
-        modifier ::= (optional | oneormore | anycount | countfromto)
-        optional ::= "?"
-        oneormore ::= "+"
-        anycount ::= "*"
-        comma ::= ","
-        countfromto ::= "{" integer (comma integer?)? "}"
-
-        # Group rules
-        grouprules ::= "(" rulelistnl ")"
-    """.trimIndent()).getOrThrow()
-
-    println(interpreted.compile())
+//    val interpreted = GBNFInterpreter.interpretGBNF("""
+//        # This GBNF represents GBNF itsself, and is written in DSL syntax for the interpreter.
+//        # See com.mylosoftworks.gbnfkotlin.interpreting.GBNFInterpreter.kt
+//
+//        root ::= ((whitespacen | comment)* whitespacen? ruledef)* whitespacen? # The rule definitions, like `root ::= "bla bla"`
+//
+//        # The basic definitions
+//        whitespace ::= [ \r\t]+ # Characters considered whitespace, the amount doesn't matter
+//        whitespacen ::= [ \r\n\t]+ # Characters considered whitespace, the amount doesn't matter
+//        identifier ::= [a-zA-Z0-9\-]+ # An identifier for a rule definition
+//        literalcontent ::= ("\\\\" | "\\\"" | [^"])* # Continue on escaped quotes
+//        rangecontent ::= ("\\\\" | "\\]" | [^\]])* # Continue on escaped closing brackets
+//        integer ::= [0-9]+
+//        comment ::= "#" [^\n]* # Comments can be used pretty much anywhere
+//
+//        ruledef ::= comment? identifier whitespace "::=" whitespace rulelist comment? # A definition of a rule `name ::= rules`
+//        rulelist ::= rulestack (whitespace "|" whitespace rulestack)* # The part of rule definitions containing the rules
+//        rulelistnl ::= rulestacknl (whitespacen "|" whitespacen rulestacknl)* # Same as rulelist but with newlines allowed
+//        rulestack ::= rule (whitespace rule)* # Like rule list, but without "|"
+//        rulestacknl ::= rule (whitespacen rule)*
+//
+//        rule ::= (grouprules | contentrules) modifier? # A single rule with an optional modifier
+//
+//        # Possible rules
+//        contentrules ::= (rangerule | literalrule | identifierrule)
+//        identifierrule ::= identifier # an identifier
+//        literalrule ::= "\"" literalcontent "\""
+//        rangerule ::= "[" rangecontent "]"
+//
+//        # Modifier rules (should take priority to get parsed properly)
+//        modifier ::= (optional | oneormore | anycount | countfromto)
+//        optional ::= "?"
+//        oneormore ::= "+"
+//        anycount ::= "*"
+//        comma ::= ","
+//        countfromto ::= "{" integer (comma integer?)? "}"
+//
+//        # Group rules
+//        grouprules ::= "(" rulelistnl ")"
+//    """.trimIndent()).getOrThrow()
+//
+//    println(interpreted.compile())
 
 //    // ("\\\\" | "\\\"" | [^\"])*
 //    val result = GBNFInterpreter.interpretGBNF("""
