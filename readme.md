@@ -51,6 +51,29 @@ Result:
 ```bnf
 root ::= "I'm having a " ("terrible" | "bad" | "okay" | "good" | "great") " day!"
 ```
+Or with the new operator based syntax:
+```kotlin
+package example
+
+import com.mylosoftworks.com.mylosoftworks.gbnfkotlin.GBNF
+
+fun main() {
+    val example = GBNF {
+        +"I'm having a "
+        oneOf {
+            +"terrible"
+            +"bad"
+            +"okay"
+            +"good"
+            +"great"
+        }
+        +" day!"
+    }
+    
+    // Print the resulting GBNF code
+    println(example.compile())
+}
+```
 
 ## Features
 GBNF Kotlin supports all features described in [the llama.cpp grammars documentation](https://github.com/ggerganov/llama.cpp/blob/master/grammars/README.md) except for comments.
